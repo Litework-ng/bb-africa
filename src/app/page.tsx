@@ -402,9 +402,9 @@ export default function Home() {
   };
 
   const menuLinks = [
-    { href: '#directory', label: 'Startups' },
-    { href: '#directory', label: 'Founders' },
-    { href: '#directory', label: 'Investors' },
+    { href: '/startups', label: 'Startups' },
+    { href: '/startups', label: 'Founders' },
+    { href: '/startups', label: 'Investors' },
     { href: '#insights', label: 'Insights' },
   ];
 
@@ -637,12 +637,12 @@ export default function Home() {
             Track traction. Raise capital. Find talent.
           </motion.p>
           <motion.div className="hero-actions" {...rise(3)}>
-            <a href="#directory" className="btn btn-primary">
+            <Link href="/startups" className="btn btn-primary">
               Explore Directory
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
-            </a>
+            </Link>
             <Link href="/liststartup" className="btn btn-ghost">
               List your startup
             </Link>
@@ -662,12 +662,12 @@ export default function Home() {
         the people and companies shaping Africa’s next wave.
       </p>
     </div>
-    <a href="#directory" className="startups-all">
+    <Link href="/startups" className="startups-all">
       Browse directory
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
         <path d="M5 12h14M12 5l7 7-7 7" />
       </svg>
-    </a>
+    </Link>
   </div>
 
   {/* Lead split */}
@@ -867,7 +867,7 @@ export default function Home() {
 
     <ul className="purpose-paths">
       <li>
-        <a href="#directory" className="purpose-path">
+        <Link href="/startups" className="purpose-path">
           <span className="purpose-path-label">Founders</span>
           <span className="purpose-path-desc">
             List your company and stay visible to capital and talent
@@ -877,10 +877,10 @@ export default function Home() {
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </span>
-        </a>
+        </Link>
       </li>
       <li>
-        <a href="#directory" className="purpose-path">
+        <Link href="/startups" className="purpose-path">
           <span className="purpose-path-label">Investors</span>
           <span className="purpose-path-desc">
             Track startups, founders, and where attention is moving
@@ -890,7 +890,7 @@ export default function Home() {
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </span>
-        </a>
+        </Link>
       </li>
       <li>
         <a href="#resources" className="purpose-path">
@@ -1012,14 +1012,14 @@ export default function Home() {
       <div className="footer-cols">
         <div className="footer-col">
           <p className="footer-heading">Explore</p>
-          <Link href="#directory">Directory</Link>
+          <Link href="/startups">Directory</Link>
           <Link href="#resources">Resources</Link>
           <Link href="#about">About</Link>
         </div>
         <div className="footer-col">
           <p className="footer-heading">For you</p>
           <Link href="/liststartup">List your startup</Link>
-          <Link href="#directory">For investors</Link>
+          <Link href="/startups">For investors</Link>
           <Link href="#resources">Events & reports</Link>
         </div>
         <div className="footer-col">
