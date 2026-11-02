@@ -43,7 +43,7 @@ const FEATURED = [
     metricBLabel: 'Stage',
     metricBValue: 'Series B',
     footLine: '$200M · Series B',
-    href: '#startups',
+    href: '/startups',
     initials: 'PS',
     cover: 'https://d1jcea4y7xhp7l.cloudfront.net/wp-content/uploads/2026/01/Paystack-Acquires-Ladder-Microfinance-Bank-750x536-1.png',
     logo: null as string | null,
@@ -61,7 +61,7 @@ const FEATURED = [
     metricBLabel: 'Stage',
     metricBValue: 'Series A',
     footLine: 'FieldGrid · Series A',
-    href: '#founders',
+    href: '/founders',
     initials: 'AO',
     cover: 'https://images.unsplash.com/photo-1573495783323-9e59a325d4b4?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D',
     logo: null,
@@ -97,7 +97,7 @@ const FEATURED = [
     metricBLabel: 'Stage',
     metricBValue: 'Series B',
     footLine: '$125M · Series B',
-    href: '#startups',
+    href: '/startups',
     initials: 'WA',
     cover: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80',
     logo: null,
@@ -133,7 +133,7 @@ const FEATURED = [
     metricBLabel: 'Stage',
     metricBValue: 'Series A',
     footLine: 'Shoreline · Series A',
-    href: '#founders',
+    href: '/founders',
     initials: 'TD',
     cover: 'https://images.unsplash.com/photo-1578758803946-2c4f6738df87?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D',
     logo: null,
@@ -403,9 +403,9 @@ export default function Home() {
 
   const menuLinks = [
     { href: '/startups', label: 'Startups' },
-    { href: '/startups', label: 'Founders' },
-    { href: '/startups', label: 'Investors' },
-    { href: '#insights', label: 'Insights' },
+    { href: '/founders', label: 'Founders' },
+    { href: '/investors', label: 'Investors' },
+    { href: '/insights', label: 'Insights' },
   ];
 
   const lead = FEATURED[0];
