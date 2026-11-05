@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { Inter_Tight } from 'next/font/google';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import './styles/home.css';
+import LivingMotif from './component/home-motif/LivingMotif';
+
 
 const display = Inter_Tight({
   subsets: ['latin'],
@@ -597,31 +599,7 @@ export default function Home() {
       </AnimatePresence>
 
       <section className="hero">
-        <div className="hero-motif" id="motif" aria-hidden="true">
-          <svg className="ribbons" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="ribA" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#222730" />
-                <stop offset="1" stopColor="#0a0b0e" />
-              </linearGradient>
-              <linearGradient id="ribB" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#181b21" />
-                <stop offset="1" stopColor="#060708" />
-              </linearGradient>
-              <linearGradient id="hl" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stopColor="#fff" stopOpacity="0" />
-                <stop offset="0.55" stopColor="#fff" stopOpacity="1" />
-                <stop offset="1" stopColor="#fff" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            {RIBBONS.map((r, i) => (
-              <g key={i}>
-                <path d={r.d} fill={r.fill} />
-                <path d={r.d} stroke="url(#hl)" strokeOpacity={r.highlight} strokeWidth="1.5" />
-              </g>
-            ))}
-          </svg>
-        </div>
+        <LivingMotif density={0.} className="hero-motif" />
         <div className="hero-shade" aria-hidden="true" />
 
         <div className="hero-inner">
