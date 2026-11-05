@@ -599,7 +599,7 @@ export default function Home() {
       </AnimatePresence>
 
       <section className="hero">
-        <LivingMotif density={0.} className="hero-motif" />
+        <LivingMotif density={0.5} className="hero-motif" />
         <div className="hero-shade" aria-hidden="true" />
 
         <div className="hero-inner">

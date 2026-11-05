@@ -1,40 +1,32 @@
+/* ============================================================
+   LivingMotif v3 — constructed commerce field
+   ============================================================ */
+
 .living-motif {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   display: block;
-  pointer-events: auto; /* needed for cursor interaction */
+  pointer-events: auto;
   z-index: 0;
 }
-
-/* Hero motif container should still allow pointer events on the canvas
-   but not block the rest of the hero UI. Structure:
-
-   .hero
-     .hero-motif   (position absolute, inset 0, pointer-events: none)
-       .living-motif  (pointer-events: auto — only the canvas catches move)
-     .hero-shade
-     .hero-inner   (z-index above, pointer-events auto on links)
-*/
 
 .hero-motif {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 130%;
-  height: 120%;
-  pointer-events: none; /* let clicks pass to content; canvas re-enables for itself */
+  width: 140%;
+  height: 125%;
+  pointer-events: none;
   z-index: 0;
 }
 
-/* Canvas itself re-enables interaction */
 .hero-motif .living-motif {
   pointer-events: auto;
 }
 
-/* Keep existing shade + content above */
 .hero-shade {
   z-index: 1;
 }
@@ -45,33 +37,40 @@
   z-index: 2;
 }
 
-/* Optional label under motif (like “Living Systems / 001”) — only if you want it */
 .living-motif-label {
   position: absolute;
   left: 50%;
-  bottom: 18%;
+  bottom: 15%;
   transform: translateX(-50%);
   z-index: 1;
   text-align: center;
   pointer-events: none;
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.2);
 }
 
 .living-motif-label span {
   display: block;
-  margin-top: 4px;
+  margin-top: 5px;
   font-size: 11px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: none;
-  color: rgba(255, 255, 255, 0.18);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.12);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .living-motif {
-    opacity: 0.55;
+    opacity: 0.65;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-motif {
+    width: 170%;
+    height: 135%;
   }
 }
