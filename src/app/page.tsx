@@ -369,7 +369,9 @@ export default function Home() {
       { threshold: 0.1, rootMargin: '0px 0px -30px 0px' }
     );
 
-    document.querySelectorAll('.card, .path, .insight, .resource').forEach((el) => {
+    document.querySelectorAll(
+      '.section, .card, .path, .insight, .resource, .spot-lead, .spot-split, .spot-tile, .resource-lead, .resource-stack-item, .resource-tile, .purpose-path'
+    ).forEach((el) => {
       io.observe(el);
     });
 
@@ -599,8 +601,10 @@ export default function Home() {
       </AnimatePresence>
 
       <section className="hero">
-        <LivingMotif density={0.5} className="hero-motif" />
         <div className="hero-shade" aria-hidden="true" />
+       <div className="hero-motif" id="motif" aria-hidden="true">
+        <LivingMotif density={0.7} />
+      </div>
 
         <div className="hero-inner">
           <motion.div className="hero-label" {...rise(0)}>

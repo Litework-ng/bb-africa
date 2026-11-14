@@ -1,340 +1,552 @@
-'use client';
 
-/**
- * LivingMotif v2 — BB Africa hero
- *
- * Outlined ribbon paths + African commerce network:
- * particles travel along clear stroke-like trade routes between
- * soft market hubs (Lagos · Nairobi · Cape Town · Accra · Dakar).
- * Cursor leaves a disturbance. Brand green on primary flows.
- *
- *   <div className="hero-motif" id="motif" aria-hidden="true">
- *     <LivingMotif />
- *   </div>
- */
+'use client';
 
 import { useEffect, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
-
-type Particle = {
-  // path-following
-  route: number;
-  t: number; // 0–1 along route
-  speed: number;
-  offset: number; // perpendicular offset for outline thickness
-  size: number;
-  alpha: number;
-  green: boolean;
-  // for hubs that orbit
-  kind: 'route' | 'hub';
-  hub?: number;
-  angle?: number;
-  radius?: number;
-};
-
-type Hub = {
-  x: number; // 0–1 normalized
-  y: number;
-  r: number;
-  pulse: number;
-};
 
 type Props = {
   density?: number;
   className?: string;
 };
 
-/** Cubic bezier point */
-function bez(
-  t: number,
-  p0: number,
-  p1: number,
-  p2: number,
-  p3: number
-): number {
-  const u = 1 - t;
-  return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
-}
+type Hub = {
+  name: string;
+  x: number;
+  y: number;
+  strength: number;
+};
 
-/** Approximate tangent for perpendicular offset */
-function bezDeriv(
-  t: number,
-  p0: number,
-  p1: number,
-  p2: number,
-  p3: number
-): number {
-  const u = 1 - t;
-  return (
-    3 * u * u * (p1 - p0) + 6 * u * t * (p2 - p1) + 3 * t * t * (p3 - p2)
-  );
-}
 
-/**
- * Ribbon routes — outlined trade arcs across the hero.
- * Coordinates are normalized 0–1 (will scale to canvas).
- * Each route: [x0,y0, cx1,cy1, cx2,cy2, x1,y1]
- */
-const ROUTES: number[][] = [
-  // upper sweep — west → east
-  [0.02, 0.28, 0.25, 0.12, 0.55, 0.38, 0.98, 0.22],
-  // mid high
-  [0.0, 0.42, 0.3, 0.28, 0.65, 0.52, 1.0, 0.36],
-  // central commerce spine
-  [0.0, 0.55, 0.28, 0.48, 0.7, 0.62, 1.0, 0.5],
-  // mid low
-  [0.02, 0.68, 0.32, 0.58, 0.62, 0.78, 0.98, 0.64],
-  // lower sweep
-  [0.0, 0.8, 0.28, 0.72, 0.58, 0.9, 1.0, 0.78],
-  // cross-link (diagonal trade)
-  [0.08, 0.2, 0.35, 0.55, 0.55, 0.35, 0.92, 0.72],
-  // secondary cross
-  [0.05, 0.75, 0.4, 0.4, 0.6, 0.7, 0.95, 0.28],
-];
+type Route = {
+  a: number;
+  b: number;
+  c1x: number;
+  c1y: number;
+  c2x: number;
+  c2y: number;
+};
 
-/** Soft market hubs (normalized). Order suggests major corridors. */
+type Particle = {
+  route: number;
+  t: number;
+  speed: number;
+  size: number;
+  alpha: number;
+};
+
+
 const HUBS: Hub[] = [
-  { x: 0.18, y: 0.48, r: 18, pulse: 0.0 }, // Lagos-ish
-  { x: 0.42, y: 0.32, r: 14, pulse: 1.2 }, // Accra / West
-  { x: 0.55, y: 0.58, r: 16, pulse: 2.1 }, // Nairobi
-  { x: 0.72, y: 0.4, r: 13, pulse: 0.6 }, // East corridor
-  { x: 0.38, y: 0.72, r: 12, pulse: 1.7 }, // Southern link
-  { x: 0.78, y: 0.68, r: 15, pulse: 0.9 }, // Cape corridor
+  { name: 'Dakar', x: 0.364, y: 0.354, strength: 0.55 },
+  { name: 'Accra', x: 0.492, y: 0.458, strength: 0.65 },
+  { name: 'Lagos', x: 0.519, y: 0.447, strength: 1.0 },
+  { name: 'Kinshasa', x: 0.607, y: 0.571, strength: 0.55 },
+  { name: 'Cairo', x: 0.725, y: 0.180, strength: 0.6 },
+  { name: 'Addis Ababa', x: 0.781, y: 0.419, strength: 0.65 },
+  { name: 'Nairobi', x: 0.767, y: 0.536, strength: 0.9 },
+  { name: 'Johannesburg', x: 0.702, y: 0.820, strength: 1.0 },
+  { name: 'Cape Town', x: 0.630, y: 0.908, strength: 0.5 },
+];
+const ROUTES: Route[] = [
+  { a: 1, b: 2, c1x: 0.501, c1y: 0.443, c2x: 0.512, c2y: 0.443 },
+  { a: 0, b: 6, c1x: 0.61, c1y: 0.43, c2x: 0.70, c2y: 0.44 },
+  { a: 6, b: 7, c1x: 0.75, c1y: 0.64, c2x: 0.69, c2y: 0.77 },
+  { a: 0, b: 3, c1x: 0.54, c1y: 0.55, c2x: 0.57, c2y: 0.57 },
+  { a: 3, b: 7, c1x: 0.60, c1y: 0.69, c2x: 0.62, c2y: 0.76 },
+  { a: 6, b: 5, c1x: 0.76, c1y: 0.46, c2x: 0.75, c2y: 0.42 },
+  { a: 5, b: 4, c1x: 0.75, c1y: 0.33, c2x: 0.76, c2y: 0.27 },
+  { a: 2, b: 0, c1x: 0.47, c1y: 0.42, c2x: 0.50, c2y: 0.47 },
+  { a: 6, b: 8, c1x: 0.76, c1y: 0.59, c2x: 0.72, c2y: 0.65 },
 ];
 
-export default function LivingMotif({ density = 1, className = '' }: Props) {
+
+function createAfricaPath(w: number, h: number) {
+  const p = new Path2D();
+
+  const X = (v: number) => v * w;
+  const Y = (v: number) => v * h;
+
+  // Mainland Africa — begin in the northwest
+  p.moveTo(X(0.375), Y(0.155));
+
+  // Atlantic coast: Morocco and Western Sahara
+  p.bezierCurveTo(
+    X(0.395), Y(0.125),
+    X(0.425), Y(0.115),
+    X(0.465), Y(0.115)
+  );
+
+  // Northern coastline: Mauritania, Algeria and Tunisia
+  p.bezierCurveTo(
+    X(0.505), Y(0.105),
+    X(0.555), Y(0.112),
+    X(0.595), Y(0.115)
+  );
+
+  p.bezierCurveTo(
+    X(0.635), Y(0.115),
+    X(0.685), Y(0.125),
+    X(0.715), Y(0.145)
+  );
+
+  // Libya and Egypt
+  p.bezierCurveTo(
+    X(0.745), Y(0.155),
+    X(0.765), Y(0.175),
+    X(0.775), Y(0.205)
+  );
+
+  p.bezierCurveTo(
+    X(0.785), Y(0.235),
+    X(0.775), Y(0.265),
+    X(0.765), Y(0.295)
+  );
+
+  // Red Sea and northeastern Africa
+  p.bezierCurveTo(
+    X(0.755), Y(0.325),
+    X(0.765), Y(0.355),
+    X(0.785), Y(0.385)
+  );
+
+  // Horn of Africa — more natural Somali projection
+  p.bezierCurveTo(
+    X(0.815), Y(0.385),
+    X(0.855), Y(0.395),
+    X(0.885), Y(0.415)
+  );
+
+  p.bezierCurveTo(
+    X(0.865), Y(0.445),
+    X(0.835), Y(0.475),
+    X(0.815), Y(0.505)
+  );
+
+  // East African coastline
+  p.bezierCurveTo(
+    X(0.805), Y(0.545),
+    X(0.785), Y(0.585),
+    X(0.765), Y(0.625)
+  );
+
+  // Mozambique coastline
+  p.bezierCurveTo(
+    X(0.745), Y(0.675),
+    X(0.725), Y(0.735),
+    X(0.705), Y(0.785)
+  );
+
+  // Southern Africa — Namibia and South Africa
+  p.bezierCurveTo(
+    X(0.685), Y(0.835),
+    X(0.665), Y(0.875),
+    X(0.645), Y(0.905)
+  );
+
+  p.bezierCurveTo(
+    X(0.635), Y(0.925),
+    X(0.615), Y(0.935),
+    X(0.605), Y(0.925)
+  );
+
+  // Southern Atlantic coastline
+  p.bezierCurveTo(
+    X(0.585), Y(0.905),
+    X(0.565), Y(0.865),
+    X(0.555), Y(0.825)
+  );
+
+  // Angola and the southwestern coast
+  p.bezierCurveTo(
+    X(0.545), Y(0.785),
+    X(0.555), Y(0.735),
+    X(0.555), Y(0.695)
+  );
+
+  p.bezierCurveTo(
+    X(0.555), Y(0.655),
+    X(0.555), Y(0.615),
+    X(0.545), Y(0.585)
+  );
+
+  // Central and western African coastline
+  p.bezierCurveTo(
+    X(0.535), Y(0.555),
+    X(0.525), Y(0.525),
+    X(0.505), Y(0.505)
+  );
+
+  // Gulf of Guinea
+  p.bezierCurveTo(
+    X(0.485), Y(0.485),
+    X(0.465), Y(0.485),
+    X(0.445), Y(0.495)
+  );
+
+  // West African coastal indentation
+  p.bezierCurveTo(
+    X(0.425), Y(0.505),
+    X(0.405), Y(0.485),
+    X(0.395), Y(0.455)
+  );
+
+  p.bezierCurveTo(
+    X(0.385), Y(0.425),
+    X(0.375), Y(0.395),
+    X(0.365), Y(0.365)
+  );
+
+  // Senegal and the westernmost coastline
+  p.bezierCurveTo(
+    X(0.355), Y(0.325),
+    X(0.355), Y(0.285),
+    X(0.365), Y(0.245)
+  );
+
+  // Northwest coast returning to Morocco
+  p.bezierCurveTo(
+    X(0.365), Y(0.205),
+    X(0.365), Y(0.175),
+    X(0.375), Y(0.155)
+  );
+
+  p.closePath();
+
+  // Madagascar — elongated and narrower
+  p.moveTo(X(0.835), Y(0.675));
+
+  p.bezierCurveTo(
+    X(0.850), Y(0.695),
+    X(0.855), Y(0.735),
+    X(0.850), Y(0.775)
+  );
+
+  p.bezierCurveTo(
+    X(0.845), Y(0.815),
+    X(0.830), Y(0.855),
+    X(0.815), Y(0.865)
+  );
+
+  p.bezierCurveTo(
+    X(0.800), Y(0.865),
+    X(0.800), Y(0.825),
+    X(0.805), Y(0.785)
+  );
+
+  p.bezierCurveTo(
+    X(0.810), Y(0.745),
+    X(0.815), Y(0.705),
+    X(0.835), Y(0.675)
+  );
+
+  p.closePath();
+
+  return p;
+}
+
+
+function pointOnRoute(
+  route: Route,
+  t: number,
+  w: number,
+  h: number
+) {
+  const a = HUBS[route.a];
+  const b = HUBS[route.b];
+  const u = 1 - t;
+
+  const x =
+    u ** 3 * a.x +
+    3 * u ** 2 * t * route.c1x +
+    3 * u * t ** 2 * route.c2x +
+    t ** 3 * b.x;
+
+  const y =
+    u ** 3 * a.y +
+    3 * u ** 2 * t * route.c1y +
+    3 * u * t ** 2 * route.c2y +
+    t ** 3 * b.y;
+
+  return { x: x * w, y: y * h };
+}
+
+export default function LivingMotif({
+  density = 0.7,
+  className = '',
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const reduce = useReducedMotion();
-  const mouse = useRef({ x: -9999, y: -9999, active: false });
-  const particles = useRef<Particle[]>([]);
-  const raf = useRef(0);
-  const time = useRef(0);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
     let w = 0;
     let h = 0;
     let dpr = 1;
+    let frame = 0;
+    let lastTime = 0;
+    let elapsed = 0;
 
-    const pointOnRoute = (route: number[], t: number, off: number) => {
-      const [x0, y0, x1, y1, x2, y2, x3, y3] = route;
-      const px = bez(t, x0, x1, x2, x3) * w;
-      const py = bez(t, y0, y1, y2, y3) * h;
-      const dx = bezDeriv(t, x0, x1, x2, x3) * w;
-      const dy = bezDeriv(t, y0, y1, y2, y3) * h;
-      const len = Math.sqrt(dx * dx + dy * dy) || 1;
-      // perpendicular
-      const nx = -dy / len;
-      const ny = dx / len;
-      return { x: px + nx * off, y: py + ny * off };
-    };
+    let africa: Path2D;
+    let particles: Particle[] = [];
+    let networkNodes: { x: number; y: number; alpha: number }[] = [];
 
-    const seed = () => {
-      const list: Particle[] = [];
-      const routeCount = Math.floor(420 * density * (reduce ? 0.4 : 1));
-      const hubCount = Math.floor(90 * density * (reduce ? 0.4 : 1));
+    const reduced = Boolean(reduceMotion);
 
-      // Particles that outline and travel the ribbon routes
-      for (let i = 0; i < routeCount; i++) {
-        const route = i % ROUTES.length;
-        // Prefer edge of the stroke for a clearer outline feel
-        const edge = Math.random() > 0.35;
-        const offset = edge
-          ? (Math.random() > 0.5 ? 1 : -1) * (2.5 + Math.random() * 5.5)
-          : (Math.random() - 0.5) * 3;
-        list.push({
-          kind: 'route',
+    const hubPosition = (hub: Hub) => ({
+      x: hub.x * w,
+      y: hub.y * h,
+    });
+
+    const seedNetwork = () => {
+      networkNodes = [];
+
+      const count = Math.floor(115 * density);
+      let attempts = 0;
+
+      while (networkNodes.length < count && attempts < count * 15) {
+        attempts++;
+
+        const x = (0.39 + Math.random() * 0.51) * w;
+        const y = (0.11 + Math.random() * 0.82) * h;
+
+        if (!ctx!.isPointInPath(africa, x, y)) continue;
+
+        networkNodes.push({
+          x,
+          y,
+          alpha: 0.10 + Math.random() * 0.22,
+        });
+      }
+
+      particles = ROUTES.flatMap((_, route) => {
+        const count = Math.max(1, Math.floor(2 * density));
+
+        return Array.from({ length: count }, () => ({
           route,
           t: Math.random(),
-          speed: 0.00015 + Math.random() * 0.00055,
-          offset,
-          size: edge ? 0.9 + Math.random() * 1.1 : 0.5 + Math.random() * 0.7,
-          alpha: edge ? 0.35 + Math.random() * 0.45 : 0.12 + Math.random() * 0.25,
-          green: route === 2 || route === 5 || Math.random() > 0.82,
-        });
-      }
-
-      // Hub orbit particles — market nodes
-      for (let i = 0; i < hubCount; i++) {
-        const hub = i % HUBS.length;
-        list.push({
-          kind: 'hub',
-          route: 0,
-          t: 0,
-          speed: 0.4 + Math.random() * 0.8,
-          offset: 0,
-          size: 0.7 + Math.random() * 1.2,
-          alpha: 0.25 + Math.random() * 0.4,
-          green: hub === 0 || hub === 2 || Math.random() > 0.7,
-          hub,
-          angle: Math.random() * Math.PI * 2,
-          radius: 6 + Math.random() * (HUBS[hub].r * 0.9),
-        });
-      }
-
-      particles.current = list;
+          speed: 0.035 + Math.random() * 0.025,
+          size: 1 + Math.random() * 0.6,
+          alpha: 0.35 + Math.random() * 0.35,
+        }));
+      });
     };
 
     const resize = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
       const rect = canvas.getBoundingClientRect();
+
       w = rect.width;
       h = rect.height;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+
       canvas.width = Math.floor(w * dpr);
       canvas.height = Math.floor(h * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      seed();
+
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      africa = createAfricaPath(w, h);
+      seedNetwork();
     };
 
-    const onMove = (e: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      mouse.current.x = e.clientX - rect.left;
-      mouse.current.y = e.clientY - rect.top;
-      mouse.current.active = true;
-    };
-    const onLeave = () => {
-      mouse.current.active = false;
-      mouse.current.x = -9999;
-      mouse.current.y = -9999;
-    };
+    const draw = (timestamp: number) => {
+      const dt = lastTime
+        ? Math.min((timestamp - lastTime) / 1000, 0.05)
+        : 0;
 
-    const drawHubRings = (t: number) => {
-      for (let i = 0; i < HUBS.length; i++) {
-        const hub = HUBS[i];
-        const cx = hub.x * w;
-        const cy = hub.y * h;
-        const pulse = 1 + Math.sin(t * 0.9 + hub.pulse) * 0.08;
-        const r = hub.r * pulse;
+      lastTime = timestamp;
+      elapsed += dt;
 
-        // Outer faint ring
-        ctx.beginPath();
-        ctx.arc(cx, cy, r * 1.35, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(14, 186, 88, 0.08)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+      ctx!.clearRect(0, 0, w, h);
 
-        // Inner outlined ring
-        ctx.beginPath();
-        ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+      // Continental silhouette
+      const fill = ctx!.createLinearGradient(
+        w * 0.43,
+        h * 0.15,
+        w * 0.80,
+        h * 0.90
+      );
 
-        // Core
-        ctx.beginPath();
-        ctx.arc(cx, cy, 1.6, 0, Math.PI * 2);
-        ctx.fillStyle = i === 0 || i === 2 ? 'rgba(14, 186, 88, 0.55)' : 'rgba(255, 255, 255, 0.35)';
-        ctx.fill();
-      }
-    };
+      fill.addColorStop(0, 'rgba(255,255,255,0.055)');
+      fill.addColorStop(0.55, 'rgba(14,186,88,0.085)');
+      fill.addColorStop(1, 'rgba(14,186,88,0.045)');
 
-    /** Very faint static outline of the ribbon paths for structure */
-    const drawRouteGuides = () => {
-      ctx.lineWidth = 1;
-      for (let i = 0; i < ROUTES.length; i++) {
-        const r = ROUTES[i];
-        ctx.beginPath();
-        ctx.moveTo(r[0] * w, r[1] * h);
-        ctx.bezierCurveTo(r[2] * w, r[3] * h, r[4] * w, r[5] * h, r[6] * w, r[7] * h);
-        ctx.strokeStyle =
-          i === 2 || i === 5
-            ? 'rgba(14, 186, 88, 0.07)'
-            : 'rgba(255, 255, 255, 0.04)';
-        ctx.stroke();
-      }
-    };
+      ctx!.fillStyle = fill;
+      ctx!.fill(africa);
 
-    const draw = (ts: number) => {
-      time.current = ts * 0.001;
-      const t = time.current;
-      ctx.clearRect(0, 0, w, h);
+      // More defined continental outline
+      ctx!.strokeStyle = 'rgba(180,220,195,0.32)';
+      ctx!.lineWidth = 1.5;
+      ctx!.stroke(africa);
 
-      drawRouteGuides();
-      drawHubRings(t);
+      ctx!.save();
+      ctx!.clip(africa);
 
-      const mx = mouse.current.x;
-      const my = mouse.current.y;
-      const live = mouse.current.active && !reduce;
+      // Soft internal atmosphere
+      const atmosphere = ctx!.createRadialGradient(
+        w * 0.65,
+        h * 0.48,
+        0,
+        w * 0.65,
+        h * 0.48,
+        Math.min(w, h) * 0.45
+      );
 
-      for (const p of particles.current) {
-        let x = 0;
-        let y = 0;
+      atmosphere.addColorStop(0, 'rgba(14,186,88,0.055)');
+      atmosphere.addColorStop(1, 'rgba(14,186,88,0)');
 
-        if (p.kind === 'route') {
-          p.t += p.speed * (reduce ? 0.4 : 1);
-          if (p.t > 1) p.t -= 1;
-          if (p.t < 0) p.t += 1;
-          const pt = pointOnRoute(ROUTES[p.route], p.t, p.offset);
-          x = pt.x;
-          y = pt.y;
-        } else {
-          // hub orbit
-          const hub = HUBS[p.hub!];
-          p.angle! += 0.003 * p.speed * (reduce ? 0.4 : 1);
-          const cx = hub.x * w;
-          const cy = hub.y * h;
-          const rr = p.radius! * (1 + Math.sin(t * 0.7 + p.angle!) * 0.05);
-          x = cx + Math.cos(p.angle!) * rr;
-          y = cy + Math.sin(p.angle!) * rr;
-        }
+      ctx!.fillStyle = atmosphere;
+      ctx!.fillRect(0, 0, w, h);
 
-        // Cursor disturbance
-        if (live) {
-          const dx = x - mx;
-          const dy = y - my;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const radius = 110;
-          if (dist < radius && dist > 0.5) {
-            const force = (1 - dist / radius) * 22;
-            x += (dx / dist) * force;
-            y += (dy / dist) * force;
+      // Fine network connections
+      ctx!.lineWidth = 0.85;
+
+      for (let i = 0; i < networkNodes.length; i++) {
+        const a = networkNodes[i];
+
+        let nearest = -1;
+        let nearestDistance = 48;
+
+        for (let j = 0; j < networkNodes.length; j++) {
+          if (i === j) continue;
+
+          const b = networkNodes[j];
+          const distance = Math.hypot(a.x - b.x, a.y - b.y);
+
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearest = j;
           }
         }
 
-        const r = p.green ? 120 : 210;
-        const g = p.green ? 220 : 220;
-        const b = p.green ? 170 : 235;
-        const a = p.alpha * (reduce ? 0.75 : 1);
+        if (nearest >= 0) {
+          const b = networkNodes[nearest];
 
-        ctx.beginPath();
-        ctx.arc(x, y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
-        ctx.fill();
+          ctx!.beginPath();
+          ctx!.moveTo(a.x, a.y);
+          ctx!.lineTo(b.x, b.y);
+          ctx!.strokeStyle = `rgba(145,220,175,${0.10 + a.alpha * 0.20})`;
+          ctx!.stroke();
+        }
+
+        ctx!.beginPath();
+        ctx!.arc(a.x, a.y, 1.15, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(200,245,220,${Math.min(a.alpha + 0.12, 0.55)})`;
+        ctx!.fill();
       }
 
-      // Soft cursor wash
-      if (live) {
-        const grad = ctx.createRadialGradient(mx, my, 0, mx, my, 100);
-        grad.addColorStop(0, 'rgba(14, 186, 88, 0.07)');
-        grad.addColorStop(1, 'rgba(14, 186, 88, 0)');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(mx, my, 100, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      // Main ecosystem routes
+      ROUTES.forEach((route, index) => {
+        const a = hubPosition(HUBS[route.a]);
+        const b = hubPosition(HUBS[route.b]);
 
-      raf.current = requestAnimationFrame(draw);
+        ctx!.beginPath();
+        ctx!.moveTo(a.x, a.y);
+        ctx!.bezierCurveTo(
+          route.c1x * w,
+          route.c1y * h,
+          route.c2x * w,
+          route.c2y * h,
+          b.x,
+          b.y
+        );
+
+        const primary = index < 5;
+
+       ctx!.strokeStyle = primary
+          ? 'rgba(14,210,100,0.42)'
+          : 'rgba(160,210,180,0.18)';
+
+        ctx!.lineWidth = primary ? 1.35 : 0.85;
+        ctx!.stroke();
+      });
+
+      // Moving data particles
+      particles.forEach((particle) => {
+        if (!reduced) {
+          particle.t = (particle.t + particle.speed * dt) % 1;
+        }
+
+        const point = pointOnRoute(
+          ROUTES[particle.route],
+          particle.t,
+          w,
+          h
+        );
+
+        const pulse = reduced
+          ? 1
+          : 0.75 + Math.sin(elapsed * 1.5 + particle.route) * 0.25;
+
+        ctx!.beginPath();
+        ctx!.arc(
+          point.x,
+          point.y,
+          particle.size,
+          0,
+          Math.PI * 2
+        );
+
+        ctx!.fillStyle = `rgba(75,225,145,${particle.alpha * pulse})`;
+        ctx!.fill();
+      });
+
+      // Technology hubs: restrained illumination
+      HUBS.forEach((hub, index) => {
+        const { x, y } = hubPosition(hub);
+
+        const pulse = reduced
+          ? 1
+          : 0.85 + Math.sin(elapsed * 1.1 + index) * 0.15;
+
+        const radius = hub.strength > 0.85 ? 3.5 : 2.2;
+
+        if (hub.strength > 0.85) {
+          const glow = ctx!.createRadialGradient(
+            x, y, 0, x, y, 19
+          );
+
+         glow.addColorStop(0, 'rgba(14,210,100,0.38)');
+          glow.addColorStop(0.45, 'rgba(14,210,100,0.12)');
+          glow.addColorStop(1, 'rgba(14,210,100,0)');
+
+          ctx!.fillStyle = glow;
+          ctx!.beginPath();
+          ctx!.arc(x, y, 19, 0, Math.PI * 2);
+          ctx!.fill();
+        }
+
+        ctx!.beginPath();
+        ctx!.arc(x, y, radius * pulse, 0, Math.PI * 2);
+
+        ctx!.fillStyle = hub.strength > 0.85
+          ? 'rgba(65,235,145,0.9)'
+          : 'rgba(220,245,230,0.6)';
+
+        ctx!.fill();
+      });
+
+      ctx!.restore();
+
+      if (!reduced) {
+        frame = requestAnimationFrame(draw);
+      }
     };
 
     resize();
-    window.addEventListener('resize', resize);
-    canvas.addEventListener('pointermove', onMove);
-    canvas.addEventListener('pointerleave', onLeave);
-    canvas.addEventListener('pointerdown', onMove);
-    raf.current = requestAnimationFrame(draw);
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+
+    frame = requestAnimationFrame(draw);
 
     return () => {
-      cancelAnimationFrame(raf.current);
-      window.removeEventListener('resize', resize);
-      canvas.removeEventListener('pointermove', onMove);
-      canvas.removeEventListener('pointerleave', onLeave);
-      canvas.removeEventListener('pointerdown', onMove);
+      cancelAnimationFrame(frame);
+      observer.disconnect();
     };
-  }, [density, reduce]);
+  }, [density, reduceMotion]);
 
   return (
     <canvas
