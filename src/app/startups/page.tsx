@@ -629,9 +629,9 @@ export default function StartupsPage() {
           </div>
         ) : (
           filtered.map((s, i) => (
-            <a
+            <Link
               key={s.id}
-              href={s.href}
+              href={`/profiles/${s.id}`}
               className="sd-card"
               style={{ animationDelay: reduce ? '0ms' : `${i * 35}ms` }}
             >
@@ -663,7 +663,7 @@ export default function StartupsPage() {
 
               {/* Hover glow edge */}
               <span className="sd-glow" aria-hidden="true" />
-            </a>
+            </Link>
           ))
         )}
       </div>
